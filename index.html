@@ -13,7 +13,7 @@
       border: 1px solid #ccc;
       border-radius: 8px;
       padding: 12px;
-      max-width: 300px;
+      max-width: 350px;
     }
   </style>
 </head>
@@ -24,10 +24,13 @@
   </div>
 
   <script>
-    fetch("https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-005?Authorization=CWA-5A70C684-59EE-49B4-9E7D-E8888105765E&format=JSON&ElementName=溫度,相對濕度&sort=time&timeFrom=2025-06-09T08:30:00&timeTo=2025-06-09T17:30:00")
+    const proxy = "https://corsproxy.io/?"; // 公開 CORS 代理
+    const apiUrl = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-005?Authorization=CWA-5A70C684-59EE-49B4-9E7D-E8888105765E&format=JSON&ElementName=溫度,相對濕度&sort=time&timeFrom=2025-06-09T08:30:00&timeTo=2025-06-09T17:30:00";
+
+    fetch(proxy + encodeURIComponent(apiUrl))
       .then(res => res.json())
       .then(data => {
-        const location = data.records.locations[0].location[0]; // 拿第一筆地點
+        const location = data.records.locations[0].location[0];
         const tempData = location.weatherElement.find(e => e.elementName === "溫度");
         const humdData = location.weatherElement.find(e => e.elementName === "相對濕度");
 
@@ -44,7 +47,7 @@
       })
       .catch(err => {
         console.error(err);
-        document.getElementById("weather").innerHTML = "資料取得失敗";
+        document.getElementById("weather").innerHTML = "❌ 資料取得失敗";
       });
   </script>
 </body>
