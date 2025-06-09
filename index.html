@@ -1,54 +1,41 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8">
-  <title>即時天氣資訊</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      font-size: 16px;
-      padding: 10px;
-    }
-    .weather-box {
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 12px;
-      max-width: 350px;
-    }
-  </style>
-</head>
-<body>
-  <div class="weather-box">
-    <h3>即時天氣</h3>
-    <div id="weather">載入中...</div>
-  </div>
+<script>
+  const proxy = "https://corsproxy.io/?"; // 公開 CORS 代理
+  const apiUrl = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-005?Authorization=CWA-5A70C684-59EE-49B4-9E7D-E8888105765E&format=JSON&ElementName=溫度,相對濕度&sort=time&timeFrom=2025-06-09T08:30:00&timeTo=2025-06-09T17:30:00";
 
-  <script>
-    const proxy = "https://corsproxy.io/?"; // 公開 CORS 代理
-    const apiUrl = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-005?Authorization=CWA-5A70C684-59EE-49B4-9E7D-E8888105765E&format=JSON&ElementName=溫度,相對濕度&sort=time&timeFrom=2025-06-09T08:30:00&timeTo=2025-06-09T17:30:00";
+  fetch(proxy + encodeURIComponent(apiUrl))
+    .then(res => {
+      if (!res.ok) {
+        throw new Error("Proxy 回傳失敗：" + res.status);
+      }
+      return res.json();
+    })
+    .then(data => {
+      const locations = data.records?.locations;
+      if (!locations || locations.length === 0) {
+        throw new Error("找不到地點資料");
+      }
 
-    fetch(proxy + encodeURIComponent(apiUrl))
-      .then(res => res.json())
-      .then(data => {
-        const location = data.records.locations[0].location[0];
-        const tempData = location.weatherElement.find(e => e.elementName === "溫度");
-        const humdData = location.weatherElement.find(e => e.elementName === "相對濕度");
+      const location = locations[0].location[0];
+      const tempData = location.weatherElement.find(e => e.elementName === "溫度");
+      const humdData = location.weatherElement.find(e => e.elementName === "相對濕度");
 
-        const time = tempData.time[0].startTime;
-        const temp = tempData.time[0].elementValue[0].value;
-        const humd = humdData.time[0].elementValue[0].value;
+      if (!tempData || !humdData) {
+        throw new Error("找不到溫度或濕度資料");
+      }
 
-        document.getElementById("weather").innerHTML = `
-          <p><strong>地點：</strong>${location.locationName}</p>
-          <p><strong>時間：</strong>${time}</p>
-          <p><strong>溫度：</strong>${temp} ℃</p>
-          <p><strong>濕度：</strong>${humd} %</p>
-        `;
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById("weather").innerHTML = "❌ 資料取得失敗";
-      });
-  </script>
-</body>
-</html>
+      const time = tempData.time[0].startTime;
+      const temp = tempData.time[0].elementValue[0].value;
+      const humd = humdData.time[0].elementValue[0].value;
+
+      document.getElementById("weather").innerHTML = `
+        <p><strong>地點：</strong>${location.locationName}</p>
+        <p><strong>時間：</strong>${time}</p>
+        <p><strong>溫度：</strong>${temp} ℃</p>
+        <p><strong>濕度：</strong>${humd} %</p>
+      `;
+    })
+    .catch(err => {
+      console.error("[錯誤] 取得資料失敗：", err);
+      document.getElementById("weather").innerHTML = "❌ 資料取得失敗：<br>" + err.message;
+    });
+</script>
